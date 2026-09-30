@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Калькулятор террасной доски (мм)</title>
+  <style>
+    :root {
+      --primary-color: #4a5568;
+      --accent-color: #3182ce;
+      --bg-color: #f7fafc;
+      --card-bg: #ffffff;
+      --text-color: #2d3748;
+      --border-color: #e2e8f0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      background-color: var(--card-bg);
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 500px;
+    }
+
+    h1 {
+      font-size: 24px;
+      text-align: center;
+      margin-bottom: 25px;
+      color: var(--primary-color);
+    }
+
+    .input-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 16px;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+    }
+
+    .row {
+      display: flex;
+      gap: 15px;
+    }
+
+    .row .input-group {
+      flex: 1;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: var(--accent-color);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background-color: #2b6cb0;
+    }
+
+    .results {
+      margin-top: 25px;
+      padding-top: 20px;
+      border-top: 2px dashed var(--border-color);
+    }
+
+    .result-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    .result-item.highlight {
+      font-weight: bold;
+      color: var(--accent-color);
+      font-size: 18px;
+    }
+
+    .note {
+      font-size: 12px;
+      color: #718096;
+      margin-top: 20px;
+      /* text-align: center; */
+      line-height: 1.5;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h1>Калькулятор террасной доски</h1>
+
+    <div class="row">
+      <div class="input-group">
+        <label for="terraceLength">Длина террасы (мм)</label>
+        <input type="number" id="terraceLength" value="3000" step="10" min="10">
+      </div>
+      <div class="input-group">
+        <label for="terraceWidth">Ширина террасы (мм)</label>
+        <input type="number" id="terraceWidth" value="2000" step="10" min="10">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="input-group">
+        <label for="boardLength">Длина доски (м)</label>
+        <input type="number" id="boardLength" value="6" step="0.1" min="0.1">
+      </div>
+      <div class="input-group">
+        <label for="boardWidth">Ширина доски (мм)</label>
+        <input type="number" id="boardWidth" value="140" step="1" min="1">
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label for="gap">Зазор между досками (мм)</label>
+      <input type="number" id="gap" value="5" step="1" min="0">
+    </div>
+
+    <button type="button" onclick="calculateBoards()">Рассчитать</button>
+
+    <div class="results" id="results" style="display: none;">
+      <div class="result-item highlight">
+        <span>Количество досок (по 6 м):</span>
+        <span id="resultBoards">0 шт.</span>
+      </div>
+
+      <div class="result-item">
+        <span>Общее количество отрезков:</span>
+        <span id="resultPieces">0 шт.</span>
+      </div>
+
+      <div class="result-item">
+        <span>Длина одного отрезка:</span>
+        <span id="resultPieceLength">0 мм</span>
+      </div>
+
+      <div class="result-item">
+        <span>Общая площадь террасы:</span>
+        <span id="resultArea">0 м²</span>
+      </div>
+
+      <div class="result-item">
+        <span>Остаток (обрезки):</span>
+        <span id="resultWaste">0 мм</span>
+      </div>
+    </div>
+
+    <div class="note">
+      * Программа рассчитывает минимальный расход при укладке досок параллельно длине террасы.
+      <br>
+      <br>
+      * Для сложных форм (Г-образных, многосекционных) рассчитывайте каждую прямоугольную секцию отдельно.
+    </div>
+  </div>
+
+  <script>
+    function calculateBoards() {
+      // Получаем значения из полей ввода
+      const terraceLengthMm = parseFloat(document.getElementById('terraceLength').value);
+      const terraceWidthMm = parseFloat(document.getElementById('terraceWidth').value);
+      const boardLengthM = parseFloat(document.getElementById('boardLength').value);
+      const boardWidthMm = parseFloat(document.getElementById('boardWidth').value);
+      const gapMm = parseFloat(document.getElementById('gap').value);
+
+      // Проверка на корректность ввода
+      if (isNaN(terraceLengthMm) || isNaN(terraceWidthMm) || isNaN(boardLengthM) || isNaN(boardWidthMm) || isNaN(gapMm)) {
+        alert("Пожалуйста, заполните все поля корректными числами.");
+        return;
+      }
+
+      if (terraceLengthMm <= 0 || terraceWidthMm <= 0 || boardLengthM <= 0 || boardWidthMm <= 0) {
+        alert("Значения должны быть больше нуля.");
+        return;
+      }
+
+      // ПЕРЕВОД ЕДИНИЦ ИЗМЕРЕНИЯ В МЕТРЫ ДЛЯ РАСЧЕТА
+      const terraceLengthM = terraceLengthMm / 1000;
+      const terraceWidthM = terraceWidthMm / 1000;
+      const boardWidthM = boardWidthMm / 1000;
+      const gapM = gapMm / 1000;
+
+      // Эффективная ширина доски с учетом зазора
+      const effectiveBoardWidthM = boardWidthM + gapM;
+
+      // Расчет количества рядов (досок) по ширине террасы
+      const rows = Math.ceil(terraceWidthM / effectiveBoardWidthM);
+
+      // Расчет количества отрезков, которые можно получить из одной 6-метровой доски
+      const piecesPerBoard = Math.floor(boardLengthM / terraceLengthM);
+
+      // Если длина террасы больше длины доски, выдаем ошибку
+      if (piecesPerBoard === 0) {
+        alert("Длина террасы превышает длину доски. Пожалуйста, уменьшите длину террасы или используйте доски большей длины.");
+        return;
+      }
+
+      // Расчет необходимого количества 6-метровых досок
+      const boardsNeeded = Math.ceil(rows / piecesPerBoard);
+
+      // Расчет отходов (в метрах, потом переведем в мм)
+      const totalBoardLengthUsedM = boardsNeeded * boardLengthM;
+      const totalRequiredLengthM = rows * terraceLengthM;
+      const wasteM = totalBoardLengthUsedM - totalRequiredLengthM;
+
+      // Расчет площади (в м²)
+      const areaM2 = terraceLengthM * terraceWidthM;
+
+      // Вывод результатов
+      document.getElementById('resultBoards').innerText = boardsNeeded + " шт.";
+      document.getElementById('resultPieces').innerText = rows + " шт.";
+
+      // Выводим длину отрезка в мм (как и просили)
+      document.getElementById('resultPieceLength').innerText = terraceLengthMm.toFixed(0) + " мм";
+
+      document.getElementById('resultArea').innerText = areaM2.toFixed(2) + " м²";
+
+      // Выводим отходы в мм
+      document.getElementById('resultWaste').innerText = (wasteM * 1000).toFixed(0) + " мм";
+
+      // Показываем блок с результатами
+      document.getElementById('results').style.display = 'block';
+    }
+  </script>
+
+</body>
+
+</html>
